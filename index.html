@@ -10,6 +10,8 @@
   <style>
     body, html { margin: 0; padding: 0; overflow: hidden; }
     #map { width: 100%; height: 100vh; background: #000; }
+
+    /* popup */
     .ol-popup {
       position: absolute;
       background: white;
@@ -19,6 +21,7 @@
       font: 14px sans-serif;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       z-index: 1000;
+      min-width: 200px;
     }
     .ol-popup:after {
       content: "";
@@ -37,6 +40,17 @@
       margin-left: -9px;
       border: 9px solid transparent;
       border-top-color: #999;
+    }
+    .ol-popup .close-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #666;
+    }
+    .ol-popup .close-btn:hover {
+      color: #000;
     }
   </style>
 </head>
@@ -69,7 +83,7 @@
           source: new ol.source.ImageStatic({
             url: imageUrl,
             projection: projection,
-            imageExtent: extent // ✅ правильное свойство
+            imageExtent: extent
           })
         })
       ],
@@ -114,7 +128,7 @@
     // слой с точками
     map.addLayer(new ol.layer.Vector({ source: vectorSource }));
 
-   // popup
+    // popup
     const popup = document.createElement('div');
     popup.className = 'ol-popup';
     popup.innerHTML = `
@@ -143,15 +157,7 @@
         document.getElementById('popup-content').innerHTML =
           `<b>${feature.get('name')}</b><br>${feature.get('desc')}`;
       } else {
-        // если кликнули в пустое место — тоже закрываем
-        popupOverlay.setPosition(undefined);
-      }
-    });
-
-    // клик мимо — закрыть popup
-    map.on('singleclick', (evt) => {
-      const pixel = map.getEventPixel(evt);
-      if (!map.hasFeatureAtPixel(pixel)) {
+        // если кликнули в пустое место — закрываем
         popupOverlay.setPosition(undefined);
       }
     });

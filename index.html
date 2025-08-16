@@ -12,35 +12,37 @@
     #map { width: 100%; height: 100vh; background: transparent; }
 
     .ol-popup {
-      position: absolute;
-      background: white;
-      border: 2px solid #333;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font: 14px/1.4 sans-serif;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-      min-width: 160px;
-      text-align: center;
-      z-index: 1000;
-    }
-    .ol-popup:after {
-      content: "";
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      margin-left: -8px;
-      border: 8px solid transparent;
-      border-top-color: white;
-    }
-    .ol-popup:before {
-      content: "";
-      position: absolute;
-      bottom: -9px;
-      left: 50%;
-      margin-left: -9px;
-      border: 9px solid transparent;
-      border-top-color: #333;
-    }
+  position: absolute;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font: 14px/1.4 sans-serif;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  min-width: 160px;
+  text-align: center;
+  z-index: 1000;
+}
+
+.ol-popup:after {
+  content: "";
+  position: absolute;
+  top: 100%;  /* стрелочка снизу pop-up'а */
+  left: 50%;
+  margin-left: -8px;
+  border: 8px solid transparent;
+  border-top-color: white;
+}
+.ol-popup:before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -9px;
+  border: 9px solid transparent;
+  border-top-color: #333;
+}
+
     .close-btn {
       position: absolute;
       top: 4px;
@@ -100,11 +102,12 @@
       <div id="popup-content"></div>
     `;
     const popupOverlay = new ol.Overlay({
-      element: popup,
-      positioning: 'bottom-center',
-      stopEvent: true,
-      offset: [0, -40]
-    });
+  element: popup,
+  positioning: 'top-center', // ✅ попап над точкой
+  stopEvent: true,
+  offset: [0, -15] // чуть приподнят над пином
+});
+
     map.addOverlay(popupOverlay);
 
     popup.querySelector('.close-btn').addEventListener('click', () => {

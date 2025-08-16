@@ -4,91 +4,126 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Карта Носкапа</title>
-  <link rel="icon" href="data:,"><!-- пустой favicon -->
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css">
   <script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/dist/ol.js"></script>
   <style>
     body, html { margin: 0; padding: 0; overflow: hidden; }
     #map { width: 100%; height: 100vh; background: #000; }
 
-    /* Общие стили popup */
+    /* --- popup --- */
     .ol-popup {
       position: absolute;
-      border-radius: 12px;
-      padding: 14px 18px;
-      font: 14px/1.4 "Segoe UI", Roboto, sans-serif;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      background: #fef8e7;
+      border: 2px solid #c49b3a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font: 14px/1.4 "Segoe UI", sans-serif;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      color: #333;
+      min-width: 180px;
+      max-width: 260px;
       z-index: 1000;
-      min-width: 220px;
-      max-width: 300px;
-      animation: fadeIn 0.25s ease;
+
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.25s ease;
+      pointer-events: none;
     }
+    .ol-popup.active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
     .ol-popup:after {
       content: "";
       position: absolute;
-      bottom: -10px;
+      top: 100%;
       left: 50%;
       margin-left: -10px;
-      border: 10px solid transparent;
+      border-width: 10px 10px 0 10px;
+      border-style: solid;
+      border-color: #fef8e7 transparent transparent transparent;
     }
+    .ol-popup:before {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -12px;
+      border-width: 12px 12px 0 12px;
+      border-style: solid;
+      border-color: #c49b3a transparent transparent transparent;
+    }
+
     .ol-popup .close-btn {
       position: absolute;
       top: 6px;
-      right: 10px;
+      right: 8px;
       cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      transition: color 0.2s;
-    }
-    .ol-popup h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .ol-popup p {
-      margin: 0;
       font-size: 14px;
+      color: #666;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .ol-popup .close-btn:hover {
+      color: #000;
     }
 
-    /* 🎨 Стили тем */
-    .popup-light {
-      background: #fff;
-      color: #2c3e50;
+    .ol-popup b {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+      color: #3b2e1a;
     }
-    .popup-light .close-btn { color: #999; }
-    .popup-light .close-btn:hover { color: #333; }
-    .popup-light:after { border-top-color: #fff; top: 100%; }
 
-    .popup-dark {
-      background: #2c3e50;
-      color: #ecf0f1;
-    }
-    .popup-dark .close-btn { color: #bbb; }
-    .popup-dark .close-btn:hover { color: #fff; }
-    .popup-dark:after { border-top-color: #2c3e50; top: 100%; }
-
-    .popup-fantasy {
+    /* --- кнопка переключения стиля --- */
+    .style-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
       background: #fef8e7;
       border: 2px solid #c49b3a;
-      color: #4a3b16;
-      font-family: "Georgia", serif;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: "Segoe UI", sans-serif;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: background 0.2s;
+      z-index: 1500;
     }
-    .popup-fantasy h3 { color: #8e6b1f; }
-    .popup-fantasy:after { border-top-color: #c49b3a; top: 100%; }
+    .style-btn:hover {
+      background: #fff5d9;
+    }
+
+    /* --- альтернативный стиль popup --- */
+    .ol-popup.dark {
+      background: #2c2c2c;
+      border: 2px solid #555;
+      color: #f1f1f1;
+    }
+    .ol-popup.dark b {
+      color: #ffd37a;
+    }
+    .ol-popup.dark:after {
+      border-color: #2c2c2c transparent transparent transparent;
+    }
+    .ol-popup.dark:before {
+      border-color: #555 transparent transparent transparent;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <button class="style-btn">Сменить стиль</button>
 
   <script>
+    // размеры изображения
     const imageWidth = 4146;
     const imageHeight = 2354;
     const extent = [0, 0, imageWidth, imageHeight];
 
+    // проекция
     const projection = new ol.proj.Projection({
       code: 'custom-image',
       units: 'pixels',
@@ -97,6 +132,7 @@
 
     const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
 
+    // карта
     const map = new ol.Map({
       target: 'map',
       layers: [
@@ -112,18 +148,22 @@
         projection: projection,
         center: ol.extent.getCenter(extent),
         zoom: 1,
-        minZoom: 0.1,
-        maxZoom: 10
+        minZoom: 0.2,
+        maxZoom: 12
       })
     });
 
+    // источник для точек
     const vectorSource = new ol.source.Vector();
+
+    // список локаций
     const locations = [
       { x: 2100, y: 1200, name: "🏔️ Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
       { x: 3200, y: 1800, name: "🏰 Королевство", desc: "Столица и центр власти." },
       { x: 800, y: 900,  name: "🌲 Забытый лес", desc: "Темный лес, полный тайн и чудовищ." }
     ];
 
+    // добавляем точки
     locations.forEach(loc => {
       const feature = new ol.Feature({
         geometry: new ol.geom.Point([loc.x, loc.y]),
@@ -134,7 +174,7 @@
       feature.setStyle(new ol.style.Style({
         text: new ol.style.Text({
           text: "📍",
-          font: "bold 26px sans-serif",
+          font: "bold 24px sans-serif",
           offsetY: -12
         })
       }));
@@ -146,7 +186,7 @@
 
     // popup
     const popup = document.createElement('div');
-    popup.className = 'ol-popup popup-fantasy'; // 👈 можно менять: popup-light | popup-dark | popup-fantasy
+    popup.className = 'ol-popup';
     popup.innerHTML = `
       <span class="close-btn">✖</span>
       <div id="popup-content"></div>
@@ -154,26 +194,40 @@
 
     const popupOverlay = new ol.Overlay({
       element: popup,
-      positioning: 'top-center', // 👈 теперь подсказка над точкой
-      offset: [0, -20], // смещаем чуть выше
+      positioning: 'bottom-center',
+      offset: [0, -25],
       stopEvent: true
     });
     map.addOverlay(popupOverlay);
 
+    // закрытие крестиком
     popup.querySelector('.close-btn').addEventListener('click', () => {
-      popupOverlay.setPosition(undefined);
+      popup.classList.remove('active');
+      setTimeout(() => popupOverlay.setPosition(undefined), 250);
     });
 
+    // обработка кликов по карте
     map.on('click', (evt) => {
       const feature = map.forEachFeatureAtPixel(evt.pixel, f => f);
       if (feature && feature.get('name')) {
         const coord = feature.getGeometry().getCoordinates();
-        popupOverlay.setPosition(coord);
         document.getElementById('popup-content').innerHTML =
-          `<h3>${feature.get('name')}</h3><p>${feature.get('desc')}</p>`;
+          `<b>${feature.get('name')}</b>${feature.get('desc')}`;
+        popupOverlay.setPosition(coord);
+        setTimeout(() => popup.classList.add('active'), 10);
       } else {
-        popupOverlay.setPosition(undefined);
+        popup.classList.remove('active');
+        setTimeout(() => popupOverlay.setPosition(undefined), 250);
       }
+    });
+
+    // кнопка смены стиля
+    const styleBtn = document.querySelector('.style-btn');
+    let darkMode = false;
+    styleBtn.addEventListener('click', () => {
+      darkMode = !darkMode;
+      popup.classList.toggle('dark', darkMode);
+      styleBtn.textContent = darkMode ? "Светлый стиль" : "Тёмный стиль";
     });
   </script>
 </body>

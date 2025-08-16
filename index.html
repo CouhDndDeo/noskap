@@ -14,43 +14,53 @@
     /* popup */
     .ol-popup {
       position: absolute;
-      background: white;
-      border: 2px solid #999;
-      border-radius: 6px;
-      padding: 10px 14px;
-      font: 14px sans-serif;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      font: 14px/1.4 "Segoe UI", Roboto, sans-serif;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
       z-index: 1000;
-      min-width: 200px;
+      min-width: 220px;
+      max-width: 300px;
+      animation: fadeIn 0.25s ease;
     }
     .ol-popup:after {
       content: "";
       position: absolute;
       top: 100%;
       left: 50%;
-      margin-left: -8px;
-      border: 8px solid transparent;
-      border-top-color: white;
-    }
-    .ol-popup:before {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      margin-left: -9px;
-      border: 9px solid transparent;
-      border-top-color: #999;
+      margin-left: -10px;
+      border: 10px solid transparent;
+      border-top-color: #fff;
+      filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
     }
     .ol-popup .close-btn {
       position: absolute;
-      top: 4px;
-      right: 6px;
+      top: 8px;
+      right: 10px;
       cursor: pointer;
+      font-size: 16px;
       font-weight: bold;
-      color: #666;
+      color: #999;
+      transition: color 0.2s;
     }
     .ol-popup .close-btn:hover {
-      color: #000;
+      color: #333;
+    }
+    .ol-popup h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .ol-popup p {
+      margin: 0;
+      font-size: 14px;
+      color: #444;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -155,9 +165,8 @@
         const coord = feature.getGeometry().getCoordinates();
         popupOverlay.setPosition(coord);
         document.getElementById('popup-content').innerHTML =
-          `<b>${feature.get('name')}</b><br>${feature.get('desc')}`;
+          `<h3>${feature.get('name')}</h3><p>${feature.get('desc')}</p>`;
       } else {
-        // если кликнули в пустое место — закрываем
         popupOverlay.setPosition(undefined);
       }
     });

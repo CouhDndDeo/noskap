@@ -14,21 +14,21 @@
     .ol-popup {
       position: absolute;
       background: white;
-      border: 2px solid #444;
-      border-radius: 8px;
-      padding: 10px 14px;
+      border: 2px solid #333;
+      border-radius: 6px;
+      padding: 8px 12px;
       font: 14px/1.4 sans-serif;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      min-width: 180px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      min-width: 160px;
       text-align: center;
-      transform: translateY(-10px); /* чуть выше точки */
+      transform: translateY(-15px);
     }
     .ol-popup:after {
       content: "";
       position: absolute;
       bottom: -8px;
       left: 50%;
-      margin-left: -8px;
+      transform: translateX(-50%);
       border-width: 8px 8px 0;
       border-style: solid;
       border-color: white transparent transparent transparent;
@@ -38,17 +38,17 @@
       position: absolute;
       bottom: -10px;
       left: 50%;
-      margin-left: -9px;
+      transform: translateX(-50%);
       border-width: 10px 10px 0;
       border-style: solid;
-      border-color: #444 transparent transparent transparent;
+      border-color: #333 transparent transparent transparent;
     }
     .close-btn {
       position: absolute;
       top: 4px;
       right: 6px;
       cursor: pointer;
-      color: #666;
+      color: #888;
     }
     .close-btn:hover { color: #000; }
   </style>
@@ -78,7 +78,7 @@
       layers: [
         new ol.layer.Image({
           source: new ol.source.ImageStatic({
-            url: imageUrl + '?v=' + Date.now(), // cache-buster
+            url: imageUrl + '?v=' + Date.now(),
             projection: projection,
             imageExtent: extent
           })
@@ -88,17 +88,17 @@
         projection: projection,
         center: ol.extent.getCenter(extent),
         zoom: 2,
-        minZoom: 1,        // не даём сделать карту слишком маленькой
+        minZoom: 1,
         maxZoom: 10,
-        extent: extent     // не даём утащить карту за края
+        extent: extent
       })
     });
 
-    // авто-fit на старте
     map.getView().fit(extent, {
       size: map.getSize(),
       padding: [20, 20, 20, 20]
     });
+
     window.addEventListener('resize', () => {
       map.updateSize();
       map.getView().fit(extent, { size: map.getSize(), padding: [20,20,20,20] });
@@ -107,10 +107,24 @@
     // точки
     const vectorSource = new ol.source.Vector();
     const locations = [
-      { x: 2100, y: 1200, name: "🏔️ Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
-      { x: 3200, y: 1800, name: "🏰 Королевство", desc: "Столица и центр власти." },
-      { x: 800,  y: 900,  name: "🌲 Забытый лес", desc: "Темный лес, полный тайн и чудовищ." }
+      { x: 2100, y: 1200, name: "Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
+      { x: 3200, y: 1800, name: "Королевство", desc: "Столица и центр власти." },
+      { x: 800,  y: 900,  name: "Забытый лес", desc: "Темный лес, полный тайн и чудовищ." }
     ];
+
+    // стиль пина (SVG)
+    const pinStyle = new ol.style.Style({
+      image: new ol.style.Icon({
+        anchor: [0.5, 1], // нижняя точка — центр привязки
+        src: 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
+            <path d="M15 0C8 0 2 6 2 13c0 9 13 27 13 27s13-18 13-27c0-7-6-13-13-13z" fill="#ff5555" stroke="#333" stroke-width="2"/>
+            <circle cx="15" cy="13" r="5" fill="white" stroke="#333" stroke-width="2"/>
+          </svg>
+        `),
+        scale: 1
+      })
+    });
 
     locations.forEach(loc => {
       const feature = new ol.Feature({
@@ -118,13 +132,7 @@
         name: loc.name,
         desc: loc.desc
       });
-      feature.setStyle(new ol.style.Style({
-        text: new ol.style.Text({
-          text: "📍",
-          font: "bold 26px sans-serif",
-          offsetY: -14
-        })
-      }));
+      feature.setStyle(pinStyle);
       vectorSource.addFeature(feature);
     });
 
@@ -140,9 +148,9 @@
 
     const popupOverlay = new ol.Overlay({
       element: popup,
-      positioning: 'bottom-center',
+      positioning: 'top-center', // ✅ прямо над пином
       stopEvent: true,
-      offset: [0, -20] // смещение выше точки
+      offset: [0, -10] // чуть выше пина
     });
     map.addOverlay(popupOverlay);
 

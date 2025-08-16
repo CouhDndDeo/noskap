@@ -14,17 +14,17 @@
 
   <script src="ol.js"></script>
   <script>
-    // ✅ Размеры — ЧИСЛА
+    // Размеры изображения карты
     const imageWidth = 4146;
     const imageHeight = 2354;
 
-    // ✅ Границы
+    // Границы карты
     const extent = [0, 0, imageWidth, imageHeight];
 
-    // ✅ Путь к карте (должен быть в корне!)
+    // Путь к изображению карты
     const imageUrl = 'noskapmap.png';
 
-    // ✅ Создаём карту
+    // Создание карты
     const map = new ol.Map({
       target: 'map',
       layers: [
@@ -33,12 +33,12 @@
             url: imageUrl,
             imageSize: [imageWidth, imageHeight],
             extent: extent,
-            projection: 'pixel'
+            projection: 'pixel' // Или 'EPSG:3857', если нужно использовать географическую проекцию
           })
         })
       ],
       view: new ol.View({
-        projection: 'pixel',
+        projection: 'pixel', // Или 'EPSG:3857', если привязка к реальным координатам
         extent: extent,
         center: ol.extent.getCenter(extent),
         zoom: 1,

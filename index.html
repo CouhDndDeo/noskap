@@ -12,33 +12,24 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000;
     }
   </style>
+  <!-- Правильный CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
-<script src="ol.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
 </head>
 <body>
   <div id="map"></div>
   <script>
-   // ✅ Должно быть ЧИСЛО, не строка!
-const imageWidth = 4146;
-const imageHeight = 2354;
+    // 🔗 Ссылка на карту (после загрузки!)
+    const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
 
-// ✅ Правильная ссылка
-const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
+    // 📏 Размеры изображения
+    const imageWidth = 4146;
+    const imageHeight = 2354;
 
-// ✅ Границы
-const extent = [0, 0, imageWidth, imageHeight]; // ← [left, bottom, right, top]
+    // Границы
+    const extent = [0, 0, imageWidth, imageHeight];
 
-// ✅ Обязательно: imageSize передаётся в source
-const imageSource = new ol.source.ImageStatic({
-  url: imageUrl,
-  imageSize: [imageWidth, imageHeight], // ← критично!
-  extent: extent,
-  projection: 'pixel'
-});
-
-// ✅ DOM-элемент существует
-<div id="map"></div>
-    // Создаём карту
+    // Карта
     const map = new ol.Map({
       target: 'map',
       layers: [

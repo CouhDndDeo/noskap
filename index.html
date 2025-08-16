@@ -8,92 +8,57 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css">
   <script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/dist/ol.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; font-family: "Segoe UI", sans-serif; }
+    body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
     #map { width: 100%; height: 100vh; background: #000; }
 
-    /* Кнопка переключения темы */
-    #theme-toggle {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 2000;
-      padding: 8px 12px;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    #theme-toggle.dark {
-      background: #333;
-      color: #fff;
-      border-color: #555;
-    }
-
-    /* Popup */
+    /* popup */
     .ol-popup {
       position: absolute;
-      background: #fef8e7;
-      border: 2px solid #c49b3a;
-      border-radius: 8px;
+      background: white;
+      border: 2px solid #999;
+      border-radius: 6px;
       padding: 10px 14px;
-      font: 14px/1.4 "Segoe UI", sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      color: #333;
+      font: 14px sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transform: translate(-50%, -100%); /* всегда над точкой */
+      white-space: nowrap;
       min-width: 180px;
-      max-width: 260px;
-      z-index: 1000;
-
-      opacity: 0;
-      transform: translateY(15px);
-      transition: all 0.25s ease;
-      pointer-events: none;
+      animation: fadeIn 0.25s ease-out;
     }
-    .ol-popup.active {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
     .ol-popup:after {
       content: "";
       position: absolute;
-      top: 100%;
+      bottom: -8px;
       left: 50%;
       transform: translateX(-50%);
-      border-width: 10px 10px 0 10px;
-      border-style: solid;
-      border-color: #fef8e7 transparent transparent transparent;
+      border: 8px solid transparent;
+      border-top-color: white;
     }
     .ol-popup:before {
       content: "";
       position: absolute;
-      top: 100%;
+      bottom: -9px;
       left: 50%;
       transform: translateX(-50%);
-      border-width: 12px 12px 0 12px;
-      border-style: solid;
-      border-color: #c49b3a transparent transparent transparent;
+      border: 9px solid transparent;
+      border-top-color: #999;
     }
-
-    /* Тёмная тема */
-    .dark-theme .ol-popup {
-      background: #2c2c2c;
-      border-color: #555;
-      color: #eee;
+    .ol-popup .close-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #333;
     }
-    .dark-theme .ol-popup:after {
-      border-top-color: #2c2c2c;
-    }
-    .dark-theme .ol-popup:before {
-      border-top-color: #555;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -110%); }
+      to   { opacity: 1; transform: translate(-50%, -100%); }
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <button id="theme-toggle">🌞 Светлая</button>
 
   <script>
     // размеры изображения
@@ -124,17 +89,31 @@
         projection: projection,
         center: ol.extent.getCenter(extent),
         zoom: 1,
-        minZoom: 0.1,
-        maxZoom: 10
+        minZoom: 0.5,
+        maxZoom: 12
       })
     });
 
+    // векторный слой
     const vectorSource = new ol.source.Vector();
 
+    // svg иконка пина (base64)
+    const pinIcon = new ol.style.Icon({
+      src: 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
+          <path fill="red" stroke="black" d="M12 0C7 0 3 4 3 9c0 7 9 18 9 18s9-11 9-18c0-5-4-9-9-9z"/>
+          <circle cx="12" cy="9" r="3" fill="white"/>
+        </svg>
+      `),
+      anchor: [0.5, 1], // нижний центр = точка
+      scale: 1
+    });
+
+    // список локаций
     const locations = [
       { x: 2100, y: 1200, name: "🏔️ Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
       { x: 3200, y: 1800, name: "🏰 Королевство", desc: "Столица и центр власти." },
-      { x: 800, y: 900,  name: "🌲 Забытый лес", desc: "Тёмный лес, полный тайн и чудовищ." }
+      { x: 800, y: 900,  name: "🌲 Забытый лес", desc: "Темный лес, полный тайн и чудовищ." }
     ];
 
     locations.forEach(loc => {
@@ -143,15 +122,7 @@
         name: loc.name,
         desc: loc.desc
       });
-
-      feature.setStyle(new ol.style.Style({
-        text: new ol.style.Text({
-          text: "📍",
-          font: "bold 24px sans-serif",
-          offsetY: -12
-        })
-      }));
-
+      feature.setStyle(new ol.style.Style({ image: pinIcon }));
       vectorSource.addFeature(feature);
     });
 
@@ -160,19 +131,20 @@
     // popup
     const popup = document.createElement('div');
     popup.className = 'ol-popup';
-    popup.innerHTML = `<span class="close-btn" style="position:absolute;top:6px;right:8px;cursor:pointer;">✖</span>
-                       <div id="popup-content"></div>`;
+    popup.innerHTML = `
+      <span class="close-btn">✖</span>
+      <div id="popup-content"></div>
+    `;
 
     const popupOverlay = new ol.Overlay({
       element: popup,
       positioning: 'bottom-center',
-      offset: [0, -35],
+      offset: [0, -10], // стрелка сядет прямо на пин
       stopEvent: true
     });
     map.addOverlay(popupOverlay);
 
     popup.querySelector('.close-btn').addEventListener('click', () => {
-      popup.classList.remove('active');
       popupOverlay.setPosition(undefined);
     });
 
@@ -183,23 +155,8 @@
         popupOverlay.setPosition(coord);
         document.getElementById('popup-content').innerHTML =
           `<b>${feature.get('name')}</b><br>${feature.get('desc')}`;
-        popup.classList.add('active');
       } else {
-        popup.classList.remove('active');
         popupOverlay.setPosition(undefined);
-      }
-    });
-
-    // Переключение темы
-    const btn = document.getElementById("theme-toggle");
-    btn.addEventListener("click", () => {
-      document.body.classList.toggle("dark-theme");
-      if (document.body.classList.contains("dark-theme")) {
-        btn.textContent = "🌙 Тёмная";
-        btn.classList.add("dark");
-      } else {
-        btn.textContent = "🌞 Светлая";
-        btn.classList.remove("dark");
       }
     });
   </script>

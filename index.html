@@ -44,39 +44,37 @@
   <div id="map"></div>
 
   <script>
-    // Размеры изображения
+    // размеры изображения
     const imageWidth = 4146;
     const imageHeight = 2354;
 
-    // Границы
+    // границы изображения (minX, minY, maxX, maxY)
     const extent = [0, 0, imageWidth, imageHeight];
 
-    // Проекция
+    // создаём проекцию "пиксельная"
     const projection = new ol.proj.Projection({
       code: 'custom-image',
       units: 'pixels',
       extent: extent,
     });
 
-    // Ссылка на карту (без пробелов!)
+    // ссылка на картинку
     const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
 
-    // Создаём карту
+    // карта
     const map = new ol.Map({
       target: 'map',
       layers: [
         new ol.layer.Image({
           source: new ol.source.ImageStatic({
             url: imageUrl,
-            imageSize: [imageWidth, imageHeight],
             projection: projection,
-            extent: extent
+            imageExtent: extent // ✅ правильное свойство
           })
         })
       ],
       view: new ol.View({
         projection: projection,
-        extent: extent,
         center: ol.extent.getCenter(extent),
         zoom: 1,
         minZoom: 0.1,
@@ -84,15 +82,17 @@
       })
     });
 
-    // Метки
+    // источник для точек
     const vectorSource = new ol.source.Vector();
 
+    // список локаций
     const locations = [
       { x: 2100, y: 1200, name: "🏔️ Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
       { x: 3200, y: 1800, name: "🏰 Королевство", desc: "Столица и центр власти." },
       { x: 800, y: 900,  name: "🌲 Забытый лес", desc: "Темный лес, полный тайн и чудовищ." }
     ];
 
+    // добавляем точки
     locations.forEach(loc => {
       const feature = new ol.Feature({
         geometry: new ol.geom.Point([loc.x, loc.y]),
@@ -111,9 +111,10 @@
       vectorSource.addFeature(feature);
     });
 
+    // слой с точками
     map.addLayer(new ol.layer.Vector({ source: vectorSource }));
 
-    // Всплывающее окно
+    // popup
     const popup = document.createElement('div');
     popup.className = 'ol-popup';
     popup.innerHTML = '<div id="popup-content"></div>';
@@ -125,6 +126,7 @@
     });
     map.addOverlay(popupOverlay);
 
+    // обработка кликов
     map.on('click', (evt) => {
       const feature = map.forEachFeatureAtPixel(evt.pixel, f => f);
       if (feature && feature.get('name')) {
@@ -137,6 +139,7 @@
       }
     });
 
+    // клик мимо — закрыть popup
     map.on('singleclick', (evt) => {
       const pixel = map.getEventPixel(evt);
       if (!map.hasFeatureAtPixel(pixel)) {

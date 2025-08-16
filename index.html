@@ -36,13 +36,27 @@
       border-top-color: #999;
     }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/index.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.min.css">
+
+  <!-- OpenLayers v10.6.1 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css">
 </head>
 <body>
   <div id="map"></div>
 
-  <script>
+  <script type="module">
+    import Map from "https://cdn.jsdelivr.net/npm/ol@10.6.1/Map.js";
+    import View from "https://cdn.jsdelivr.net/npm/ol@10.6.1/View.js";
+    import {getCenter} from "https://cdn.jsdelivr.net/npm/ol@10.6.1/extent.js";
+    import ImageLayer from "https://cdn.jsdelivr.net/npm/ol@10.6.1/layer/Image.js";
+    import VectorLayer from "https://cdn.jsdelivr.net/npm/ol@10.6.1/layer/Vector.js";
+    import ImageStatic from "https://cdn.jsdelivr.net/npm/ol@10.6.1/source/ImageStatic.js";
+    import VectorSource from "https://cdn.jsdelivr.net/npm/ol@10.6.1/source/Vector.js";
+    import Feature from "https://cdn.jsdelivr.net/npm/ol@10.6.1/Feature.js";
+    import Point from "https://cdn.jsdelivr.net/npm/ol@10.6.1/geom/Point.js";
+    import Style from "https://cdn.jsdelivr.net/npm/ol@10.6.1/style/Style.js";
+    import Text from "https://cdn.jsdelivr.net/npm/ol@10.6.1/style/Text.js";
+    import Overlay from "https://cdn.jsdelivr.net/npm/ol@10.6.1/Overlay.js";
+
     // ✅ Размеры карты
     const imageWidth = 4146;
     const imageHeight = 2354;
@@ -54,11 +68,11 @@
     const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
 
     // --- СОЗДАНИЕ КАРТЫ ---
-    const map = new ol.Map({
+    const map = new Map({
       target: 'map',
       layers: [
-        new ol.layer.Image({
-          source: new ol.source.ImageStatic({
+        new ImageLayer({
+          source: new ImageStatic({
             url: imageUrl,
             imageSize: [imageWidth, imageHeight],
             extent: extent,
@@ -66,10 +80,10 @@
           })
         })
       ],
-      view: new ol.View({
+      view: new View({
         projection: 'pixel',
         extent: extent,
-        center: ol.extent.getCenter(extent),
+        center: getCenter(extent),
         zoom: 2,
         minZoom: 1,
         maxZoom: 4
@@ -77,7 +91,7 @@
     });
 
     // --- МЕТКИ ---
-    const vectorSource = new ol.source.Vector();
+    const vectorSource = new VectorSource();
 
     const locations = [
       { x: 2100, y: 1200, name: "🏔️ Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
@@ -86,14 +100,14 @@
     ];
 
     locations.forEach(loc => {
-      const feature = new ol.Feature({
-        geometry: new ol.geom.Point([loc.x, loc.y]),
+      const feature = new Feature({
+        geometry: new Point([loc.x, loc.y]),
         name: loc.name,
         desc: loc.desc
       });
 
-      feature.setStyle(new ol.style.Style({
-        text: new ol.style.Text({
+      feature.setStyle(new Style({
+        text: new Text({
           text: "📍",
           font: "bold 24px sans-serif",
           offsetY: -12
@@ -103,7 +117,7 @@
       vectorSource.addFeature(feature);
     });
 
-    map.addLayer(new ol.layer.Vector({
+    map.addLayer(new VectorLayer({
       source: vectorSource
     }));
 
@@ -111,9 +125,9 @@
     const popup = document.createElement('div');
     popup.className = 'ol-popup';
     popup.innerHTML = '<div id="popup-content"></div>';
-    document.body.appendChild(popup); // ✅ добавляем в DOM
+    document.body.appendChild(popup);
 
-    const popupOverlay = new ol.Overlay({
+    const popupOverlay = new Overlay({
       element: popup,
       positioning: 'bottom-center',
       stopEvent: true

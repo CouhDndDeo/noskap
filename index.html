@@ -18,16 +18,26 @@
 <body>
   <div id="map"></div>
   <script>
-    // 🔗 Прямая ссылка на PNG
-    const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
+   // ✅ Должно быть ЧИСЛО, не строка!
+const imageWidth = 4146;
+const imageHeight = 2354;
 
-    // 📏 Реальные размеры изображения
-    const imageWidth = 4146;   // ← число!
-    const imageHeight = 2354;  // ← число!
+// ✅ Правильная ссылка
+const imageUrl = 'https://raw.githubusercontent.com/CouhDndDeo/noskap/main/noskapmap.png';
 
-    // Границы: [left, bottom, right, top]
-    const extent = [0, 0, imageWidth, imageHeight];
+// ✅ Границы
+const extent = [0, 0, imageWidth, imageHeight]; // ← [left, bottom, right, top]
 
+// ✅ Обязательно: imageSize передаётся в source
+const imageSource = new ol.source.ImageStatic({
+  url: imageUrl,
+  imageSize: [imageWidth, imageHeight], // ← критично!
+  extent: extent,
+  projection: 'pixel'
+});
+
+// ✅ DOM-элемент существует
+<div id="map"></div>
     // Создаём карту
     const map = new ol.Map({
       target: 'map',

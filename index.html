@@ -8,57 +8,69 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css">
   <script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/dist/ol.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
+    body, html { margin: 0; padding: 0; overflow: hidden; }
     #map { width: 100%; height: 100vh; background: #000; }
 
     /* popup */
     .ol-popup {
       position: absolute;
       background: white;
-      border: 2px solid #999;
-      border-radius: 6px;
+      border: 2px solid #444;
+      border-radius: 8px;
       padding: 10px 14px;
       font: 14px sans-serif;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      transform: translate(-50%, -100%); /* всегда над точкой */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      transform: translate(-50%, -100%);
       white-space: nowrap;
-      min-width: 180px;
-      animation: fadeIn 0.25s ease-out;
     }
     .ol-popup:after {
       content: "";
       position: absolute;
-      bottom: -8px;
+      bottom: -12px;
       left: 50%;
       transform: translateX(-50%);
-      border: 8px solid transparent;
+      border: 12px solid transparent;
       border-top-color: white;
     }
     .ol-popup:before {
       content: "";
       position: absolute;
-      bottom: -9px;
+      bottom: -14px;
       left: 50%;
       transform: translateX(-50%);
-      border: 9px solid transparent;
-      border-top-color: #999;
+      border: 14px solid transparent;
+      border-top-color: #444;
     }
     .ol-popup .close-btn {
       position: absolute;
       top: 4px;
       right: 6px;
       cursor: pointer;
-      font-size: 14px;
-      color: #333;
+      color: #666;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translate(-50%, -110%); }
-      to   { opacity: 1; transform: translate(-50%, -100%); }
+    .ol-popup .close-btn:hover {
+      color: red;
+    }
+
+    /* координаты-хинт */
+    #coords {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font: 13px monospace;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div id="coords">Кликните по карте для получения координат</div>
 
   <script>
     // размеры изображения
@@ -88,58 +100,49 @@
       view: new ol.View({
         projection: projection,
         center: ol.extent.getCenter(extent),
-        zoom: 1,
-        minZoom: 0.5,
-        maxZoom: 12
+        zoom: 1.2,
+        minZoom: 0.2,
+        maxZoom: 10
       })
     });
 
-    // векторный слой
     const vectorSource = new ol.source.Vector();
 
-    // svg иконка пина (base64)
     const pinIcon = new ol.style.Icon({
-      src: 'data:image/svg+xml;utf8,' + encodeURIComponent(`
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
-          <path fill="red" stroke="black" d="M12 0C7 0 3 4 3 9c0 7 9 18 9 18s9-11 9-18c0-5-4-9-9-9z"/>
-          <circle cx="12" cy="9" r="3" fill="white"/>
-        </svg>
-      `),
-      anchor: [0.5, 1], // нижний центр = точка
-      scale: 1
+      src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+      scale: 0.05,
+      anchor: [0.5, 1]
     });
 
-    // список локаций
-    const locations = [
-      { x: 2100, y: 1200, name: "🏔️ Пик Великанов", desc: "Высокие вершины, где обитают древние великаны." },
-      { x: 3200, y: 1800, name: "🏰 Королевство", desc: "Столица и центр власти." },
-      { x: 800, y: 900,  name: "🌲 Забытый лес", desc: "Темный лес, полный тайн и чудовищ." }
-    ];
+    // грузим точки из JSON
+    fetch("https://raw.githubusercontent.com/CouhDndDeo/noskap/main/locations.json")
+      .then(r => r.json())
+      .then(locations => {
+        locations.forEach(loc => {
+          const feature = new ol.Feature({
+            geometry: new ol.geom.Point([loc.x, loc.y]),
+            name: loc.name,
+            desc: loc.desc
+          });
 
-    locations.forEach(loc => {
-      const feature = new ol.Feature({
-        geometry: new ol.geom.Point([loc.x, loc.y]),
-        name: loc.name,
-        desc: loc.desc
+          feature.setStyle(new ol.style.Style({
+            image: pinIcon
+          }));
+
+          vectorSource.addFeature(feature);
+        });
       });
-      feature.setStyle(new ol.style.Style({ image: pinIcon }));
-      vectorSource.addFeature(feature);
-    });
 
     map.addLayer(new ol.layer.Vector({ source: vectorSource }));
 
     // popup
     const popup = document.createElement('div');
     popup.className = 'ol-popup';
-    popup.innerHTML = `
-      <span class="close-btn">✖</span>
-      <div id="popup-content"></div>
-    `;
+    popup.innerHTML = `<span class="close-btn">✖</span><div id="popup-content"></div>`;
 
     const popupOverlay = new ol.Overlay({
       element: popup,
       positioning: 'bottom-center',
-      offset: [0, -10], // стрелка сядет прямо на пин
       stopEvent: true
     });
     map.addOverlay(popupOverlay);
@@ -158,6 +161,14 @@
       } else {
         popupOverlay.setPosition(undefined);
       }
+    });
+
+    // ===== Вывод координат при клике =====
+    const coordsDiv = document.getElementById('coords');
+    map.on('singleclick', (evt) => {
+      const coord = evt.coordinate;
+      console.log("📌 Координаты для JSON:", { x: Math.round(coord[0]), y: Math.round(coord[1]) });
+      coordsDiv.textContent = `x: ${Math.round(coord[0])}, y: ${Math.round(coord[1])}`;
     });
   </script>
 </body>

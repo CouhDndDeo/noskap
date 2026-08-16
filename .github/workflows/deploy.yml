@@ -1,0 +1,61 @@
+# Автоматическая сборка и публикация карты на GitHub Pages.
+# Срабатывает после каждого коммита в ветку main — в том числе после правки
+# locations.ts прямо через веб-интерфейс GitHub.
+name: Publish map
+
+on:
+  push:
+    branches: [main]
+  # позволяет запустить сборку вручную кнопкой во вкладке Actions
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# если пушнуть несколько раз подряд — доедет последняя версия
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Установить зависимости
+        run: bun install --frozen-lockfile
+
+      - name: Собрать статику
+        env:
+          STATIC_BASE: ./
+        run: bun run build:web
+
+      - name: Подготовить папку для Pages
+        run: |
+          cp -r packages/web/dist pages-dist
+          sed -i 's|src="/runable.js"|src="./runable.js"|' pages-dist/index.html
+          touch pages-dist/.nojekyll
+          cp pages-dist/index.html pages-dist/404.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
